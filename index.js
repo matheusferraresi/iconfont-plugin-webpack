@@ -45,6 +45,7 @@ Plugin.prototype.getOptions = function(options) {
 	}
 	const src = path.resolve(opts.src);
 	const dest = {
+		absolutePath: opts.dest.absolutePath,
 		font: path.resolve(opts.dest.font),
 		css: path.resolve(opts.dest.css)
 	};
@@ -52,12 +53,15 @@ Plugin.prototype.getOptions = function(options) {
 		? opts.cssTemplate
 		: require('./src/template')
 	);
+	const iconCssAttributes = opts.iconCssAttributes;
 	return {
 		src: src,
 		dest: {
+			absolutePath: dest.absolutePath,
 			font: dest.font,
 			css: dest.css,
 		},
+		iconCssAttributes: iconCssAttributes,
 		cssTemplate: cssTemplate,
 		family: ('string' === typeof opts.family && opts.family) || 'iconfont'
 	};
@@ -143,15 +147,20 @@ Plugin.prototype.generateFonts = function(family, files) {
 				.replace(/\[type\]/g, type);
 			return { path:filePath, contents: buffer };
 		}, []);
-		return { files: files, unicodes: args.unicodes };
+		return { files: files, unicodes: args.unicodes};
 	}).then(function(args) {
 		const files = args.files;
 		const unicodes = args.unicodes;
-		const relativePathToFonts = path.relative(path.dirname(context.options.dest.css), path.dirname(context.options.dest.font));
+		const iconCssAttributes = context.options.iconCssAttributes;
+		const absolutePath = context.options.dest.absolutePath || '';
+		const relativePath = path.relative(path.dirname(context.options.dest.css), path.dirname(context.options.dest.font));
+		const pathToFonts = (absolutePath) ? absolutePath : relativePath;
+
 		const cssContent = context.options.cssTemplate({
 			unicodes: unicodes,
 			family: family,
-			fontPath: relativePathToFonts.replace(/\\/g, '/'),
+			fontPath: pathToFonts.replace(/\\/g, '/'),
+			iconCssAttributes: iconCssAttributes,
 		});
 		const cssPath = context.options.dest.css.replace(/\[family\]/g, family);
 

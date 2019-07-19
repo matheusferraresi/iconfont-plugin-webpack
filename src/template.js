@@ -70,11 +70,21 @@ $icon-prefix: '' !default;
 @if $create-font-face == true {
   @font-face {
    font-family: "__FAMILY__";
-   src: url('__RELATIVE_FONT_PATH__/__FAMILY__.eot'); /* IE9 Compat Modes */
-   src: url('__RELATIVE_FONT_PATH__/__FAMILY__.eot?#iefix') format('embedded-opentype'), /* IE6-IE8 */
-      url('__RELATIVE_FONT_PATH__/__FAMILY__.woff') format('woff'), /* Pretty Modern Browsers */
-      url('__RELATIVE_FONT_PATH__/__FAMILY__.ttf')  format('truetype'), /* Safari, Android, iOS */
-      url('__RELATIVE_FONT_PATH__/__FAMILY__.svg') format('svg'); /* Legacy iOS */
+   src: url('__FONT_PATH__/__FAMILY__.eot'); /* IE9 Compat Modes */
+   src: url('__FONT_PATH__/__FAMILY__.eot?#iefix') format('embedded-opentype'), /* IE6-IE8 */
+      url('__FONT_PATH__/__FAMILY__.woff') format('woff'), /* Pretty Modern Browsers */
+      url('__FONT_PATH__/__FAMILY__.ttf')  format('truetype'), /* Safari, Android, iOS */
+      url('__FONT_PATH__/__FAMILY__.svg') format('svg'); /* Legacy iOS */
+  }
+}
+
+@mixin forEachIcon {
+  @each $icon, $content in map-get($__iconfont__data, "__FAMILY__") {
+    &.#{$icon-prefix}#{$icon}:before {
+      font-family: "__FAMILY__";
+      content: iconfont-item("__FAMILY__/#{$icon}");
+      __ICON_CSS_ATTRIBUTES__
+    }
   }
 }
 
@@ -83,14 +93,10 @@ $icon-prefix: '' !default;
   .#{$icon-common-class} {
     font-style: normal;
     font-weight: 400;
-
-    @each $icon, $content in map-get($__iconfont__data, "__FAMILY__") {
-      &.#{$icon-prefix}#{$icon}:before {
-        font-family: "__FAMILY__";
-        content: iconfont-item("__FAMILY__/#{$icon}");
-      }
-    }
+    @include forEachIcon;
   }
+} @else {
+  @include forEachIcon;
 }
 `;
 
@@ -104,6 +110,7 @@ function toSCSS(glyphs) {
 module.exports = function(args) {
   const family = args.family;
   const pathToFonts = args.fontPath;
+  const iconCssAttributes = args.iconCssAttributes || '';
   const glyphs = args.unicodes.reduce(function(glyphs, glyph) {
     glyphs[glyph.name] = '\\' + glyph.unicode.charCodeAt(0).toString(16).toLowerCase();
     return glyphs;
@@ -113,7 +120,8 @@ module.exports = function(args) {
 
     const replacements = {
         __FAMILY__: family,
-        __RELATIVE_FONT_PATH__: pathToFonts
+        __FONT_PATH__: pathToFonts,
+        __ICON_CSS_ATTRIBUTES__: iconCssAttributes
     };
 
     const str = TEMPLATE.replace(RegExp(Object.keys(replacements).join('|'), 'gi'), function(matched) {
